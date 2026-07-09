@@ -9,12 +9,36 @@ from urllib.parse import urlparse
 import requests
 
 SECURITY_HEADERS = {
-    "Strict-Transport-Security": "Forces HTTPS, blocks downgrade attacks.",
-    "Content-Security-Policy": "Restricts script/style sources, mitigates XSS.",
-    "X-Frame-Options": "Prevents clickjacking via iframe embedding.",
-    "X-Content-Type-Options": "Blocks MIME-sniffing attacks.",
-    "Referrer-Policy": "Limits referrer information leakage.",
-    "Permissions-Policy": "Restricts browser feature access (camera, geo...).",
+    "Strict-Transport-Security": {
+        "desc": "Force le navigateur à utiliser HTTPS.",
+        "risk": "Un attaquant sur le même réseau peut intercepter le trafic en forçant une connexion HTTP (downgrade attack) et voler des données.",
+        "fix": "Flask: @app.after_request → response.headers['Strict-Transport-Security'] = 'max-age=31536000'",
+    },
+    "Content-Security-Policy": {
+        "desc": "Restreint les sources autorisées pour scripts/styles/images.",
+        "risk": "Sans cet en-tête, une faille XSS permet d'exécuter n'importe quel script injecté (vol de session, redirection malveillante).",
+        "fix": "Flask: response.headers['Content-Security-Policy'] = \"default-src 'self'\"",
+    },
+    "X-Frame-Options": {
+        "desc": "Empêche l'intégration de la page dans une iframe.",
+        "risk": "Le site peut être piégé dans une iframe invisible (clickjacking) pour faire cliquer l'utilisateur à son insu.",
+        "fix": "Flask: response.headers['X-Frame-Options'] = 'DENY'",
+    },
+    "X-Content-Type-Options": {
+        "desc": "Empêche le navigateur de deviner le type MIME.",
+        "risk": "Un fichier malveillant déguisé (ex: script renommé en image) peut être exécuté par le navigateur.",
+        "fix": "Flask: response.headers['X-Content-Type-Options'] = 'nosniff'",
+    },
+    "Referrer-Policy": {
+        "desc": "Contrôle les informations envoyées lors de la navigation sortante.",
+        "risk": "Des URLs sensibles (tokens, IDs internes) peuvent fuiter vers des sites tiers via l'en-tête Referer.",
+        "fix": "Flask: response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'",
+    },
+    "Permissions-Policy": {
+        "desc": "Restreint l'accès aux fonctionnalités du navigateur (caméra, géoloc...).",
+        "risk": "Un script tiers compromis pourrait accéder à la caméra, au micro ou à la géolocalisation sans contrôle.",
+        "fix": "Flask: response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'",
+    },
 }
 
 COMMON_PORTS = {
@@ -59,8 +83,8 @@ def scan_target(url: str) -> dict:
 
 def _check_headers(response, report: dict) -> dict:
     missing = [
-        {"name": h, "desc": d}
-        for h, d in SECURITY_HEADERS.items() if h not in response.headers
+        {"name": h, **info}
+        for h, info in SECURITY_HEADERS.items() if h not in response.headers
     ]
     report["score"] -= len(missing) * 8
     return {

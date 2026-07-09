@@ -93,10 +93,11 @@ body{
   border-radius:10px;padding:26px 30px;margin-bottom:22px;
 }
 .score-ring{position:relative;width:120px;height:120px;flex-shrink:0}
-.score-ring svg{transform:rotate(-90deg);width:100%;height:100%}
+.score-ring svg{width:100%;height:100%}
+.ring-bg,.ring-fg{transform:rotate(-90deg);transform-origin:60px 60px}
 .ring-bg{fill:none;stroke:var(--panel-border);stroke-width:8}
 .ring-fg{fill:none;stroke:var(--green);stroke-width:8;stroke-linecap:round;
-  stroke-dasharray:327;stroke-dashoffset:327;transition:stroke-dashoffset 1s ease, stroke .3s;}
+  stroke-dasharray:326.7;stroke-dashoffset:326.7;transition:stroke-dashoffset 1s ease, stroke .3s;}
 .score-value{
   position:absolute;inset:0;display:flex;align-items:baseline;justify-content:center;
   font-family:var(--mono);font-weight:600;
@@ -135,7 +136,11 @@ body{
   font-size:0.82rem;padding:9px 12px;border-radius:6px;
   background:#0D1626;border:1px solid var(--panel-border);
 }
-.finding-list li strong{font-family:var(--mono);color:var(--amber);display:block;margin-bottom:2px}
+.finding-list li strong{font-family:var(--mono);color:var(--amber);display:block;margin-bottom:4px}
+.finding-desc{display:block;color:var(--text-dim);margin-bottom:6px}
+.finding-risk{display:block;color:var(--red);font-size:0.78rem;margin-bottom:6px;line-height:1.4}
+.finding-fix{display:block;font-family:var(--mono);font-size:0.75rem;color:var(--cyan);
+  background:#080D16;padding:6px 8px;border-radius:4px;white-space:pre-wrap;word-break:break-all}
 .finding-list .ok{color:var(--green);font-family:var(--mono);font-size:0.82rem}
 
 .tag-list{list-style:none;display:flex;flex-wrap:wrap;gap:8px}

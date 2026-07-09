@@ -72,7 +72,7 @@ function renderResults(data) {
 
   // Score ring
   const score = data.score ?? 0;
-  const circumference = 327;
+  const circumference = 326.7; // 2 * PI * 52 (ring radius)
   const offset = circumference - (circumference * score) / 100;
   const ring = document.getElementById('ring-fg');
   ring.style.strokeDashoffset = offset;
@@ -106,7 +106,11 @@ function renderResults(data) {
       headersList.innerHTML = '<li class="ok">✓ Tous les en-têtes vérifiés sont présents</li>';
     } else {
       headersList.innerHTML = h.missing
-        .map(m => `<li><strong>${m.name}</strong>${m.desc}</li>`)
+        .map(m => `<li><strong>${m.name}</strong>
+          <span class="finding-desc">${m.desc}</span>
+          <span class="finding-risk">⚠ Risque : ${m.risk}</span>
+          <code class="finding-fix">${m.fix}</code>
+        </li>`)
         .join('');
     }
   }
