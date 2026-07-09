@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentinel — Analyseur de vulnérabilités web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">◆</span>
+    <span class="brand-name">SENTINEL</span>
+    <span class="brand-tag">recon &amp; exposure scanner</span>
+  </div>
+  <div class="topbar-status">
+    <span class="dot dot--live"></span> système opérationnel
+  </div>
+</header>
+
+<main class="shell">
+
+  <section class="scan-panel">
+    <h1>Analyse d'exposition externe</h1>
+    <p class="lede">Renseignez une cible pour évaluer ses en-têtes de sécurité, son certificat TLS, ses ports exposés et ses technologies détectées.</p>
+
+    <form id="scan-form" class="scan-form">
+      <input type="text" id="target-input" placeholder="exemple.com" autocomplete="off" required>
+      <button type="submit" id="scan-btn">Lancer l'analyse</button>
+    </form>
+    <p class="disclaimer">⚠ N'analysez que des cibles que vous possédez ou pour lesquelles vous avez une autorisation explicite.</p>
+  </section>
+
+  <section id="terminal" class="terminal hidden">
+    <div class="terminal-head">
+      <span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span>
+      <span class="term-title">scan.log</span>
+    </div>
+    <div id="terminal-body" class="terminal-body"></div>
+  </section>
+
+  <section id="results" class="results hidden">
+
+    <div class="score-card">
+      <div class="score-ring">
+        <svg viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle id="ring-fg" class="ring-fg" cx="60" cy="60" r="52"></circle>
+        </svg>
+        <div class="score-value"><span id="score-number">--</span><small>/100</small></div>
+      </div>
+      <div class="score-meta">
+        <span class="eyebrow">Score d'exposition</span>
+        <h2 id="score-label">—</h2>
+        <p id="score-target" class="mono">—</p>
+      </div>
+    </div>
+
+    <div class="grid">
+
+      <article class="card">
+        <header><h3>En-têtes de sécurité</h3><span id="headers-badge" class="badge">—</span></header>
+        <dl id="headers-meta" class="meta-list"></dl>
+        <ul id="headers-list" class="finding-list"></ul>
+      </article>
+
+      <article class="card">
+        <header><h3>Certificat TLS</h3><span id="ssl-badge" class="badge">—</span></header>
+        <dl id="ssl-meta" class="meta-list"></dl>
+      </article>
+
+      <article class="card">
+        <header><h3>Ports exposés</h3><span id="ports-badge" class="badge">—</span></header>
+        <ul id="ports-list" class="finding-list"></ul>
+      </article>
+
+      <article class="card">
+        <header><h3>Technologies détectées</h3></header>
+        <ul id="tech-list" class="tag-list"></ul>
+      </article>
+
+    </div>
+  </section>
+
+</main>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
