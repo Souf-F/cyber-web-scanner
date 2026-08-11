@@ -1,4 +1,4 @@
-# Sentinel — Web Vulnerability Scanner
+# Sentinel  Web Vulnerability Scanner
 
 A Flask-based web dashboard for external exposure scanning: security headers, TLS certificate health, common open ports, and technology fingerprinting — with a live exposure score.
 
