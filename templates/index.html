@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sentinel — Analyseur de vulnérabilités web</title>
+<title>Sentinel · Analyseur de vulnérabilités web gratuit</title>
+<meta name="description" content="Analysez l'exposition externe de n'importe quel site web : en-têtes HTTP, TLS, ports, DNS, cookies, CORS, fichiers sensibles et plus encore.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -23,26 +24,131 @@
 
 <main class="shell">
 
-  <section class="scan-panel">
-    <h1>Analyse d'exposition externe</h1>
-    <p class="lede">Renseignez une cible pour évaluer ses en-têtes de sécurité, son certificat TLS, ses ports exposés et ses technologies détectées.</p>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-badge">outil gratuit</span>
+      <span class="hero-badge">open source</span>
+    </div>
+    <h1 class="hero-title">Analysez la sécurité<br>de votre site en un clic.</h1>
+    <p class="hero-sub">Sentinel effectue 24 vérifications réparties en 16 catégories · en-têtes HTTP, certificat TLS, 30 ports, DNS/DNSSEC, cookies, CORS, code source, fichiers sensibles (46+ chemins), listage de répertoires, pages d'erreur verbeuses et plus encore.</p>
 
-    <form id="scan-form" class="scan-form">
-      <input type="text" id="target-input" placeholder="exemple.com" autocomplete="off" required>
-      <button type="submit" id="scan-btn">Lancer l'analyse</button>
-    </form>
-    <p class="disclaimer">⚠ N'analysez que des cibles que vous possédez ou pour lesquelles vous avez une autorisation explicite.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <span class="feat-icon">◈</span>
+        <span class="feat-label">En-têtes HTTP</span>
+        <span class="feat-desc">9 headers · qualité HSTS/CSP</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">◆</span>
+        <span class="feat-label">TLS / SSL</span>
+        <span class="feat-desc">cert · protocole · cipher</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">◎</span>
+        <span class="feat-label">Ports exposés</span>
+        <span class="feat-desc">30 ports · Docker · Elastic</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">◉</span>
+        <span class="feat-label">DNS &amp; Email</span>
+        <span class="feat-desc">SPF · DMARC · CAA · DNSSEC</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">○</span>
+        <span class="feat-label">Cookies</span>
+        <span class="feat-desc">HttpOnly · Secure · SameSite</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">◇</span>
+        <span class="feat-label">CORS</span>
+        <span class="feat-desc">wildcard · origin reflection</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">→</span>
+        <span class="feat-label">Redirections</span>
+        <span class="feat-desc">HTTPS forcé · open redirect</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">◌</span>
+        <span class="feat-label">Fichiers sensibles</span>
+        <span class="feat-desc">46+ chemins · .env · actuator</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">≡</span>
+        <span class="feat-label">Méthodes HTTP</span>
+        <span class="feat-desc">TRACE · PUT · DELETE</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">⬡</span>
+        <span class="feat-label">WAF / CDN</span>
+        <span class="feat-desc">Cloudflare · AWS · Akamai…</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">&#x2316;</span>
+        <span class="feat-label">Code source</span>
+        <span class="feat-desc">clés API · SRI · IP internes</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">⚙</span>
+        <span class="feat-label">Headers avancés</span>
+        <span class="feat-desc">debug mode · Server-Timing</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">◧</span>
+        <span class="feat-label">Technologies</span>
+        <span class="feat-desc">25+ frameworks &amp; CMS</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">▦</span>
+        <span class="feat-label">Répertoires</span>
+        <span class="feat-desc">listage ouvert · 12 dossiers</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">⚡</span>
+        <span class="feat-label">Pages d'erreur</span>
+        <span class="feat-desc">stack traces · chemins système</span>
+      </div>
+    </div>
   </section>
 
+  <!-- Scan form -->
+  <section class="scan-panel">
+    <h2 class="scan-title">Lancer une analyse</h2>
+    <form id="scan-form" class="scan-form">
+      <div class="input-row">
+        <input type="text" id="target-input" placeholder="exemple.com ou https://exemple.com" autocomplete="off" required>
+        <button type="submit" id="scan-btn">Analyser</button>
+      </div>
+      <label class="consent-label">
+        <input type="checkbox" id="consent-check" required>
+        <span>Je certifie être propriétaire de cette cible ou disposer d'une autorisation explicite de l'auditer. Toute utilisation non autorisée est illégale.</span>
+      </label>
+    </form>
+  </section>
+
+  <!-- Terminal -->
   <section id="terminal" class="terminal hidden">
     <div class="terminal-head">
       <span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span>
       <span class="term-title">scan.log</span>
     </div>
+    <div class="scan-progress hidden" id="scan-progress-bar">
+      <div id="scan-progress-fill" class="scan-progress-fill"></div>
+    </div>
     <div id="terminal-body" class="terminal-body"></div>
   </section>
 
+  <!-- Results -->
   <section id="results" class="results hidden">
+
+    <div class="results-header">
+      <h2 class="results-title">Rapport d'analyse</h2>
+      <div class="export-group">
+        <button id="report-btn" class="export-btn export-btn--primary">⎙ Rapport PDF</button>
+        <button id="export-btn" class="export-btn">↓ JSON</button>
+      </div>
+    </div>
 
     <div class="score-card">
       <div class="score-ring">
@@ -50,34 +156,89 @@
           <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
           <circle id="ring-fg" class="ring-fg" cx="60" cy="60" r="52"></circle>
         </svg>
-        <div class="score-value"><span id="score-number">--</span><small>/100</small></div>
+        <div class="score-value"><div class="score-inner"><span id="score-number">--</span><small>/100</small></div></div>
       </div>
       <div class="score-meta">
-        <span class="eyebrow">Score d'exposition</span>
-        <h2 id="score-label">—</h2>
-        <p id="score-target" class="mono">—</p>
+        <span class="eyebrow">Score de sécurité</span>
+        <h2 id="score-label"></h2>
+        <p id="score-target" class="mono"></p>
+        <p class="score-hint">Plus le score est élevé, moins le site est exposé.</p>
       </div>
     </div>
 
     <div class="grid">
 
       <article class="card">
-        <header><h3>En-têtes de sécurité</h3><span id="headers-badge" class="badge">—</span></header>
+        <header><h3>En-têtes de sécurité</h3><span id="headers-badge" class="badge"></span></header>
         <dl id="headers-meta" class="meta-list"></dl>
         <ul id="headers-list" class="finding-list"></ul>
       </article>
 
       <article class="card">
-        <header><h3>Certificat TLS</h3><span id="ssl-badge" class="badge">—</span></header>
+        <header><h3>Certificat TLS</h3><span id="ssl-badge" class="badge"></span></header>
         <dl id="ssl-meta" class="meta-list"></dl>
       </article>
 
       <article class="card">
-        <header><h3>Ports exposés</h3><span id="ports-badge" class="badge">—</span></header>
+        <header><h3>DNS &amp; Sécurité email</h3><span id="dns-badge" class="badge"></span></header>
+        <dl id="dns-meta" class="meta-list"></dl>
+        <ul id="dns-list" class="finding-list"></ul>
+        <dl id="dns-advanced" class="meta-list" style="margin-top:10px"></dl>
+      </article>
+
+      <article class="card">
+        <header><h3>Cookies</h3><span id="cookies-badge" class="badge"></span></header>
+        <ul id="cookies-list" class="cookie-list"></ul>
+      </article>
+
+      <article class="card">
+        <header><h3>CORS</h3><span id="cors-badge" class="badge"></span></header>
+        <dl id="cors-meta" class="meta-list"></dl>
+        <ul id="cors-list" class="finding-list"></ul>
+      </article>
+
+      <article class="card">
+        <header><h3>Redirection HTTP</h3><span id="redirect-badge" class="badge"></span></header>
+        <dl id="redirect-meta" class="meta-list"></dl>
+      </article>
+
+      <article class="card">
+        <header><h3>Ports exposés</h3><span id="ports-badge" class="badge"></span></header>
         <ul id="ports-list" class="finding-list"></ul>
       </article>
 
       <article class="card">
+        <header><h3>Fichiers sensibles</h3><span id="disclosure-badge" class="badge"></span></header>
+        <ul id="disclosure-list" class="finding-list"></ul>
+      </article>
+
+      <article class="card">
+        <header><h3>Méthodes HTTP</h3><span id="methods-badge" class="badge"></span></header>
+        <div id="methods-body"></div>
+      </article>
+
+      <article class="card">
+        <header><h3>WAF / CDN</h3><span id="waf-badge" class="badge"></span></header>
+        <ul id="waf-list" class="tag-list"></ul>
+        <p id="waf-none" class="dim-note hidden">Aucun WAF ou CDN détecté.</p>
+      </article>
+
+      <article class="card">
+        <header><h3>Analyse du code source</h3><span id="source-badge" class="badge"></span></header>
+        <ul id="source-list" class="finding-list"></ul>
+      </article>
+
+      <article class="card">
+        <header><h3>Redirection ouverte</h3><span id="redirect-open-badge" class="badge"></span></header>
+        <div id="redirect-open-body"></div>
+      </article>
+
+      <article class="card card--wide">
+        <header><h3>Audit avancé · HSTS / CSP / Debug</h3><span id="deep-headers-badge" class="badge"></span></header>
+        <ul id="deep-headers-list" class="finding-list"></ul>
+      </article>
+
+      <article class="card card--wide">
         <header><h3>Technologies détectées</h3></header>
         <ul id="tech-list" class="tag-list"></ul>
       </article>
@@ -86,6 +247,11 @@
   </section>
 
 </main>
+
+<footer class="site-footer">
+  <p>Sentinel · outil éducatif. N'analysez que des cibles que vous possédez ou pour lesquelles vous avez une autorisation explicite.</p>
+  <p>Développé par <a href="https://github.com/Souf-F" target="_blank" rel="noopener">Soufiane Filali</a></p>
+</footer>
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
