@@ -251,4 +251,51 @@ body{
 .site-footer a{color:var(--cyan);text-decoration:none}
 .site-footer a:hover{text-decoration:underline}
 
+/* ---------- animations ---------- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes lineIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scanPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(79,209,197,0.3); }
+  70%  { box-shadow: 0 0 0 10px rgba(79,209,197,0); }
+  100% { box-shadow: 0 0 0 0 rgba(79,209,197,0); }
+}
+
+/* Page load */
+.hero { animation: fadeIn 0.7s ease both; }
+.scan-panel { animation: fadeUp 0.5s ease 0.12s both; }
+
+/* Feat cards lift */
+.feat-card {
+  transition: border-color .18s, transform .18s, box-shadow .18s;
+}
+.feat-card:hover {
+  border-color: rgba(79,209,197,0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+
+/* Terminal entrance */
+.terminal.anim-enter { animation: fadeUp 0.28s ease both; }
+
+/* Terminal line entrance when resolved */
+.term-line--ok, .term-line--warn { animation: lineIn 0.22s ease both; }
+.term-line--fail { animation: lineIn 0.22s ease both; background: rgba(239,91,91,0.05); }
+
+/* Result cards */
+.card.anim-card { animation: fadeUp 0.38s ease var(--anim-delay, 0s) both; }
+.score-card.anim-card { animation: fadeUp 0.4s ease both; }
+
+/* Scan button active pulse */
+#scan-btn:not(:disabled):active { animation: scanPulse 0.4s ease; }
+
 .hidden{display:none}

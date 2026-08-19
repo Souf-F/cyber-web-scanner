@@ -16,28 +16,28 @@ const progressFill = document.getElementById('scan-progress-fill');
 const TEST_CHECKS = [
   {
     label: 'en-têtes de sécurité (9 vérifiés)',
-    eval: d => (d.headers?.missing?.length || 0) === 0 ? 'ok' : 'fail',
-    detail: d => d.headers?.error ? 'erreur connexion' : d.headers?.missing?.length ? `${d.headers.missing.length} manquant(s)` : 'tous présents',
+    eval: d => d.headers?.error ? 'warn' : (d.headers?.missing?.length || 0) === 0 ? 'ok' : 'fail',
+    detail: d => d.headers?.error ? 'erreur connexion — non vérifiable' : d.headers?.missing?.length ? `${d.headers.missing.length} manquant(s)` : 'tous présents',
   },
   {
     label: 'qualité HSTS (max-age / preload)',
-    eval: d => { const h = d.deep_headers?.hsts; return h && h.max_age >= 31536000 && h.include_subdomains ? 'ok' : h ? 'warn' : 'fail'; },
-    detail: d => { const h = d.deep_headers?.hsts; return h ? `max-age=${h.max_age}s${h.include_subdomains?' · incl.sub':''}${h.preload?' · preload':''}` : 'HSTS absent'; },
+    eval: d => { if (d.headers?.error) return 'warn'; const h = d.deep_headers?.hsts; return h && h.max_age >= 31536000 && h.include_subdomains ? 'ok' : h ? 'warn' : 'fail'; },
+    detail: d => { if (d.headers?.error) return 'non vérifiable'; const h = d.deep_headers?.hsts; return h ? `max-age=${h.max_age}s${h.include_subdomains?' · incl.sub':''}${h.preload?' · preload':''}` : 'HSTS absent'; },
   },
   {
     label: "qualité CSP (unsafe-inline / eval)",
-    eval: d => { if (!d.deep_headers?.csp_present) return 'warn'; const bad = (d.deep_headers?.issues||[]).filter(i=>i.type?.startsWith('csp_')); return bad.length ? 'fail' : 'ok'; },
-    detail: d => { if (!d.deep_headers?.csp_present) return 'CSP absent'; const bad = (d.deep_headers?.issues||[]).filter(i=>i.type?.startsWith('csp_')); return bad.length ? bad.map(i=>i.type.replace('csp_','')).join(', ') : 'ok'; },
+    eval: d => { if (d.headers?.error) return 'warn'; if (!d.deep_headers?.csp_present) return 'warn'; const bad = (d.deep_headers?.issues||[]).filter(i=>i.type?.startsWith('csp_')); return bad.length ? 'fail' : 'ok'; },
+    detail: d => { if (d.headers?.error) return 'non vérifiable'; if (!d.deep_headers?.csp_present) return 'CSP absent'; const bad = (d.deep_headers?.issues||[]).filter(i=>i.type?.startsWith('csp_')); return bad.length ? bad.map(i=>i.type.replace('csp_','')).join(', ') : 'ok'; },
   },
   {
     label: 'headers de debug / info en production',
-    eval: d => !(d.deep_headers?.debug_headers?.length) ? 'ok' : 'fail',
-    detail: d => d.deep_headers?.debug_headers?.length ? d.deep_headers.debug_headers.map(h=>h.header).join(', ') : 'aucun',
+    eval: d => d.headers?.error ? 'warn' : !(d.deep_headers?.debug_headers?.length) ? 'ok' : 'fail',
+    detail: d => d.headers?.error ? 'non vérifiable' : d.deep_headers?.debug_headers?.length ? d.deep_headers.debug_headers.map(h=>h.header).join(', ') : 'aucun',
   },
   {
     label: 'certificat TLS/SSL (validité)',
-    eval: d => d.ssl?.error ? 'fail' : !d.ssl?.valid ? 'fail' : d.ssl?.days_left < 30 ? 'warn' : 'ok',
-    detail: d => d.ssl?.error ? 'erreur TLS' : !d.ssl?.valid ? `expiré (${d.ssl?.expires})` : `valide · ${d.ssl?.days_left}j · ${d.ssl?.issuer}`,
+    eval: d => d.ssl?.local_chain_issue ? 'warn' : d.ssl?.error ? 'fail' : !d.ssl?.valid ? 'fail' : d.ssl?.days_left < 30 ? 'warn' : 'ok',
+    detail: d => d.ssl?.local_chain_issue ? 'chaîne CA non vérifiable localement' : d.ssl?.error ? 'erreur TLS' : !d.ssl?.valid ? `expiré (${d.ssl?.expires})` : `valide · ${d.ssl?.days_left}j · ${d.ssl?.issuer}`,
   },
   {
     label: 'protocole TLS (version)',
@@ -131,8 +131,8 @@ const TEST_CHECKS = [
   },
   {
     label: 'WAF / CDN',
-    eval: d => d.waf?.length ? 'ok' : 'warn',
-    detail: d => d.waf?.length ? d.waf.join(', ') : 'aucune protection détectée',
+    eval: d => d.headers?.error ? 'warn' : d.waf?.length ? 'ok' : 'warn',
+    detail: d => d.headers?.error ? 'non vérifiable' : d.waf?.length ? d.waf.join(', ') : 'aucune protection détectée',
   },
 ];
 
@@ -141,9 +141,16 @@ const SPINNER = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
 let _spinnerInterval  = null;
 let _progressInterval = null;
 
+function triggerAnim(el, cls) {
+  el.classList.remove(cls);
+  void el.getBoundingClientRect();
+  el.classList.add(cls);
+}
+
 function showLoadingTerminal() {
   termBody.innerHTML = '';
   terminal.classList.remove('hidden');
+  triggerAnim(terminal, 'anim-enter');
 
   // Progress bar: reset then animate towards 88% asymptotically
   progressFill.style.transition = 'none';
@@ -389,6 +396,16 @@ function collectFindings(data) {
         fix: 'Désactiver TLS 1.0 et 1.1, autoriser uniquement TLS 1.2 et TLS 1.3.\nNginx : ssl_protocols TLSv1.2 TLSv1.3;\nApache : SSLProtocol -all +TLSv1.2 +TLSv1.3',
       });
     }
+  } else if (data.ssl?.local_chain_issue) {
+    findings.push({
+      id: 'SSL', category: 'Certificat TLS/SSL',
+      title: 'Vérification TLS incomplète (limitation du scanner)',
+      severity: 'low',
+      description: 'La chaîne de certification n\'a pas pu être validée par le bundle CA local du scanner. Cela ne signifie pas que le certificat est invalide — les navigateurs peuvent l\'accepter parfaitement.',
+      evidence: `Erreur locale : ${data.ssl.error}\nCause probable : certificat intermédiaire absent du bundle certifi Python, non lié à un problème serveur.`,
+      impact: 'Faux positif potentiel. Vérifier le certificat avec : openssl s_client -connect ' + data.hostname + ':443 -showcerts ou curl -v https://' + data.hostname,
+      fix: 'Si openssl/curl valident le cert sans erreur, aucune action requise. Sinon : renouveler via Let\'s Encrypt (certbot renew) et s\'assurer que le serveur envoie la chaîne complète (fullchain.pem).',
+    });
   } else if (data.ssl?.error) {
     findings.push({
       id: 'SSL', category: 'Certificat TLS/SSL',
@@ -938,12 +955,12 @@ function buildReport(data) {
         `HTTP ${data.redirect?.http_status} , pas de redirection vers HTTPS`
       ],
       ['Ports exposés',
-        !(data.ports?.open?.length) ? 'ok' :
+        !(data.ports?.open?.filter(p=>p.risk!=='info').length) ? 'ok' :
         data.ports.open.some(p => p.risk === 'critical') ? 'bad' :
         data.ports.open.some(p => p.risk === 'high') ? 'warn' : 'ok',
         data.ports?.error ? `Erreur : ${data.ports.error}` :
-        data.ports?.open?.length === 0 ? 'Aucun port sensible exposé' :
-        `${data.ports?.open?.length} port(s) ouvert(s) : ${(data.ports?.open || []).map(p => `${p.port}/${p.service}`).join(', ')}`
+        data.ports?.open?.filter(p=>p.risk!=='info').length === 0 ? 'Aucun port sensible exposé' :
+        `${data.ports?.open?.filter(p=>p.risk!=='info').length} port(s) sensible(s) exposé(s) : ${(data.ports?.open || []).filter(p=>p.risk!=='info').map(p => `${p.port}/${p.service}`).join(', ')}`
       ],
       ['Fichiers sensibles',
         !(data.disclosure?.found?.filter(f => f.risk !== 'info').length) ? 'ok' :
@@ -1109,6 +1126,13 @@ function renderResults(data) {
   renderDeepHeaders(data.deep_headers || {});
   renderTech(data.tech || []);
 
+  // Staggered entrance for score card + grid cards
+  triggerAnim(document.querySelector('.score-card'), 'anim-card');
+  document.querySelectorAll('#results .card').forEach((card, i) => {
+    card.style.setProperty('--anim-delay', `${0.05 + i * 0.035}s`);
+    triggerAnim(card, 'anim-card');
+  });
+
   results.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -1131,6 +1155,11 @@ function renderHeaders(h) {
 function renderSSL(s) {
   const badge = document.getElementById('ssl-badge');
   const meta  = document.getElementById('ssl-meta');
+  if (s.local_chain_issue) {
+    badge.textContent = 'inconclus'; badge.className = 'badge badge--warn';
+    meta.innerHTML = `<dt>statut</dt><dd>Chaîne de certification non vérifiable par le bundle CA local du scanner. Le certificat peut être valide dans les navigateurs.</dd><dt>erreur</dt><dd style="font-family:var(--mono);font-size:0.78rem">${s.error}</dd>`;
+    return;
+  }
   if (s.error) { badge.textContent='erreur'; badge.className='badge badge--bad'; meta.innerHTML=`<dt>erreur</dt><dd>${s.error}</dd>`; return; }
   const level = !s.valid ? 'bad' : s.days_left < 30 ? 'warn' : 'good';
   badge.textContent = s.valid ? 'valide' : 'expiré';

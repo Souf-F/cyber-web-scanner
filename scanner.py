@@ -7,8 +7,12 @@ import ssl
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
+import urllib3
+
 import dns.resolver
 import requests
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 SECURITY_HEADERS = {
     "Strict-Transport-Security": {
@@ -228,7 +232,7 @@ PATH_VERIFY_TOKENS: dict[str, list[str]] = {
     '/docker-compose.yml':   ['services:', '  image:', '  ports:'],
     '/actuator':             ['"_links":{"self"', '"templated":false', '"templated": false'],
     '/actuator/env':         ['activeProfiles', 'systemProperties', 'propertySources'],
-    '/graphql':              ['"data"', '"errors"', '"__schema"'],
+    '/graphql':              ['"__schema"', '"__typename"', '"__type":'],
     '/elmah.axd':            ['Error Log', 'ELMAH', 'Unhandled Exception'],
     '/xmlrpc.php':           ['<?xml', 'methodResponse', 'faultCode'],
     '/wp-json/wp/v2/users':  ['"slug":', '"link":', '"avatar_urls"'],
@@ -300,8 +304,11 @@ def scan_target(url: str) -> dict:
 
     response = None
     try:
+        # verify=False: SSL validity is checked separately by _check_ssl via raw socket.
+        # Using verify=True here would block header/WAF/cookie analysis on sites whose
+        # certificate chain isn't in the local certifi bundle despite being browser-valid.
         response = requests.get(
-            url, timeout=10, allow_redirects=True,
+            url, timeout=10, allow_redirects=True, verify=False,
             headers={"User-Agent": "Sentinel/1.0 Security Scanner"},
         )
     except requests.RequestException as exc:
@@ -417,6 +424,11 @@ def _check_ssl(hostname: str) -> tuple:
                 cert = ssock.getpeercert()
                 protocol = ssock.version()
                 cipher = ssock.cipher()
+    except ssl.SSLCertVerificationError as exc:
+        # "unable to get local issuer certificate" means the local certifi bundle
+        # can't verify the chain — the cert may still be perfectly valid in browsers.
+        # Flag as inconclusive rather than a definitive failure to avoid false positives.
+        return {"error": str(exc), "local_chain_issue": True}, 3
     except Exception as exc:
         return {"error": str(exc)}, 15
 
@@ -534,7 +546,7 @@ def _check_info_disclosure(base_url: str) -> tuple:
     try:
         canary = requests.get(
             base_url + "/_sentinel_canary_x9z8y7_notexist.html",
-            timeout=5, allow_redirects=False,
+            timeout=5, allow_redirects=False, verify=False,
             headers={"User-Agent": "Sentinel/1.0 Security Scanner"},
         )
         if canary.status_code == 200:
@@ -547,7 +559,7 @@ def _check_info_disclosure(base_url: str) -> tuple:
         try:
             r = requests.get(
                 base_url + path,
-                timeout=5, allow_redirects=False,
+                timeout=5, allow_redirects=False, verify=False,
                 headers={"User-Agent": "Sentinel/1.0 Security Scanner"},
             )
             if r.status_code == 404:
@@ -589,7 +601,7 @@ def _check_methods(url: str) -> tuple:
     METHOD_DED = {"TRACE": 8, "TRACK": 8, "PUT": 5, "DELETE": 3}
     try:
         r = requests.options(
-            url, timeout=5,
+            url, timeout=5, verify=False,
             headers={"User-Agent": "Sentinel/1.0 Security Scanner"},
         )
         allow = r.headers.get("Allow", r.headers.get("Access-Control-Allow-Methods", ""))
@@ -621,7 +633,7 @@ def _check_redirect(hostname: str) -> tuple:
 def _check_cors(url: str) -> tuple:
     try:
         r = requests.get(
-            url, timeout=5,
+            url, timeout=5, verify=False,
             headers={"Origin": "https://evil.com", "User-Agent": "Sentinel/1.0 Security Scanner"},
         )
         acao = r.headers.get("Access-Control-Allow-Origin", "")
@@ -887,7 +899,7 @@ def _check_directory_listing(base_url: str) -> tuple:
     def probe(path):
         try:
             r = requests.get(
-                base_url + path, timeout=4, allow_redirects=False,
+                base_url + path, timeout=4, allow_redirects=False, verify=False,
                 headers={"User-Agent": "Sentinel/1.0 Security Scanner"},
             )
             if r.status_code == 200 and any(tok in r.text for tok in listing_tokens):
@@ -914,7 +926,7 @@ def _check_error_page_disclosure(url: str) -> tuple:
         try:
             sep = "&" if "?" in url else "?"
             r = requests.get(
-                f"{url}{sep}q={payload}", timeout=4,
+                f"{url}{sep}q={payload}", timeout=4, verify=False,
                 headers={"User-Agent": "Sentinel/1.0 Security Scanner"},
             )
             if r.status_code in (200, 400, 500):
@@ -937,7 +949,7 @@ def _check_open_redirect(url: str) -> tuple:
             sep = "&" if "?" in url else "?"
             r = requests.get(
                 f"{url}{sep}{param}={EVIL}", timeout=3,
-                allow_redirects=False,
+                allow_redirects=False, verify=False,
                 headers={"User-Agent": "Sentinel/1.0 Security Scanner"},
             )
             loc = r.headers.get("Location", "")
